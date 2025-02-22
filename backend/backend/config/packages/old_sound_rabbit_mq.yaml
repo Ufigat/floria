@@ -1,0 +1,30 @@
+old_sound_rabbit_mq:
+    connections:
+        default:
+            host: 'rabbitmq'           # Ваш хост RabbitMQ
+            port: 5672                  # Порт RabbitMQ (по умолчанию 5672)
+            user: 'guest'               # Пользователь RabbitMQ
+            password: 'guest'           # Пароль пользователя
+            vhost: '/'                  # Виртуальный хост
+
+    producers:
+        app_producer:
+            connection: default
+            exchange_options:
+                name: 'messages'
+                type: direct
+            queue_options:
+                name: 'read'
+                durable: false
+
+    consumers:
+        app_consumer_create:
+            connection: default
+            exchange_options: { name: 'messages', type: direct }
+            queue_options: { name: 'create', durable: false }
+            callback: 'App\rabbitMq\MessageConsumerCreator'
+        app_consumer_taker:
+            connection: default
+            exchange_options: { name: 'messages', type: direct }
+            queue_options: { name: 'take', durable: false }
+            callback: 'App\rabbitMq\MessageConsumerTaker'

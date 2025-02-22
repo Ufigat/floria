@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend:/var/www/symfony
+    depends_on:
+      - php
+    ports:
+      - "80:80"
+    networks:
+      - floria
+
+  php:
+    build:
+      context: ./docker/php
+    container_name: php
+    restart: always
+    volumes:
+      - ./backend:/var/www/symfony
+    environment:
+      - DATABASE_URL=postgresql://root:root@postgres:5432/floria
+    depends_on:
+      - postgres
+      - rabbitmq
+    ports:
+      - "9000:9000"
+    networks:
+      - floria
+
+  postgres:
+    image: postgres:16.1-alpine3.19
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: floria
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    ports:
+      - "15432:5432"
+    networks:
+      - floria
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - floria
+
+networks:
+  floria:
+    driver: bridge
